@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Machine Learning Model Files
+*.pt
+*.pth
+*.weights
+*.onnx
+*.h5
+
+# Video and Image Outputs
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# YOLO/Ultralytics Output
+runs/
+training/
+
+# Datasets (if large)
+# videos/
+# datasets/
+
+# IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Environment files with secrets
+.env
