@@ -13,6 +13,11 @@ def video_reader(video_path):
         if not ret:
             break
         frames.append(frame)
-return frames 
+    return frames 
 
-
+def save_video(output_video,saved_video_path):
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(saved_video_path, fourcc, 24, (output_video[0].shape[1], output_video[0].shape[0]))
+    for frame in output_video:
+        out.write(frame)
+    out.release()
