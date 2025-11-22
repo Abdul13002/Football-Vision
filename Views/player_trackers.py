@@ -20,4 +20,4 @@ def save_video(output_video,saved_video_path):
     out = cv2.VideoWriter(saved_video_path, fourcc, 24, (output_video[0].shape[1], output_video[0].shape[0]))
     for frame in output_video:
         out.write(frame)
-    out.release()
+    out.release() 

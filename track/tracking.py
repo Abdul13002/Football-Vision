@@ -21,9 +21,24 @@ class tracking:
             cls_names = Detected.names
             cls_names_inv = {v:k for k,v in cls_names.items()}
 
+            detected_supervision = sv.Detections.from_ultralytics(Detected)
+
+            for object_ind, class_id in enumerate(detected_supervision.class_id):
+                if cls_names[class_id] == "goalkeeper":
+                    detected_supervision.class_id[object_ind] = cls_names_inv['person']
+
+                
+
+
+            
+
             Detected_sv = sv.Detections.from_ultralytics(Detected)
 
             print(Detected_sv)
+
+
+
+
     
 
 
