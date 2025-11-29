@@ -3,6 +3,7 @@ import supervision as sv
 import pickle
 import os
 import sys
+import cv2
 sys.path.append('../')
 from Views import get_center_bbox, get_width
 class tracking:
@@ -78,51 +79,40 @@ class tracking:
         return tracks
 
     def draw_ellpse(self, frame, bbox, track_id, color=(0, 255, 0)):
-        """
-        Draw a 'platform disc' under the player using the bbox.
-
-        bbox: [x1, y1, x2, y2]
-        """
-        x1, y1, x2, y2 = map(int, bbox)
-
-        # bottom-center of bbox = approximate feet / ground contact point
-        cx = (x1 + x2) // 2
-        cy = y2
+        y2 = int(bbox[3])
+        x_center, _ = get_center_bbox(bbox)
+        width = max(25, min(get_width(bbox), 40))
 
         overlay = frame.copy()
 
-        # radius scaled to player width (min radius 8)
-        radius = max(8, (x2 - x1) // 3)
-
-        # filled base disc (semi-transparent)
-        cv2.circle(overlay, (cx, cy), radius, color, thickness=-1)
-
-        # outline ring around disc
-        cv2.circle(overlay, (cx, cy), radius + 2, color, thickness=2)
-
-        # small vertical connector line (from feet up into body)
-        line_height = max(10, (y2 - y1) // 4)
-        cv2.line(overlay, (cx, cy), (cx, cy - line_height), color, thickness=2)
-
-        # alpha blending for glow effect
-        alpha = 0.4
-        frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
-
-        # optional: draw track ID slightly above head
-        label = str(track_id)
-        label_y = max(0, y1 - 10)
-        cv2.putText(
-            frame,
-            label,
-            (cx - 10, label_y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            color,
-            1,
-            cv2.LINE_AA
+        cv2.ellipse(
+            overlay,
+            center=(x_center, y2),
+            axes=(int(width), int(0.35*width)),
+            angle=0,
+            startAngle=-95,
+            endAngle=235,
+            color=(200, 200, 255),  
+            thickness=-1,  # Fill the ellipse
+            lineType=cv2.LINE_4
         )
 
-        return frame   
+        alpha = 0.3  
+        frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
+
+        cv2.ellipse(
+            frame,
+            center=(x_center, y2),
+            axes=(int(width), int(0.35*width)),
+            angle=0,
+            startAngle=-95,
+            endAngle=235,
+            color=color,
+            thickness=2,
+            lineType=cv2.LINE_AA
+        )
+
+        return frame
 
 
 
@@ -132,14 +122,13 @@ class tracking:
         for frame_num, frame in enumerate(video_frames):
             frame = frame.copy()
 
-            # get dicts for this frame
             player_dict = tracks["players"][frame_num]
             referee_dict = tracks["referees"][frame_num]
             ball_dict = tracks["ball"][frame_num]
 
             # players: green disc
             for track_id, player in player_dict.items():
-                frame = self.draw_ellpse(frame, player["bbox"], track_id, color=(0, 255, 0))
+                frame = self.draw_ellpse(frame, player["bbox"], track_id, color=(255, 20, 0))
 
             # referees: yellow disc
             for track_id, ref in referee_dict.items():
