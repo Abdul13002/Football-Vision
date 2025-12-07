@@ -4,8 +4,10 @@ import pickle
 import os
 import sys
 import cv2
+import numpy as np
 sys.path.append('../')
 from Views import get_center_bbox, get_width
+from src.team_assignment import TeamAssigner
 class tracking:
     def __init__(self,model_path):
         self.model = YOLO(model_path)
@@ -15,9 +17,10 @@ class tracking:
         batch_size = 20
         Detected = []
         for i in range (0, len(frames), batch_size):
-            Total_Detected = self.model.predict(frames[i:i+batch_size], conf=0.1)
+            # Use half precision and device='mps' for M4 acceleration
+            Total_Detected = self.model.predict(frames[i:i+batch_size], conf=0.1, half=True, device='mps')
             Detected += Total_Detected
-           
+
         return Detected
 
     def object_tracking(self, frames, read_from_stub=False, stub_path=None):
@@ -78,6 +81,18 @@ class tracking:
 
         return tracks
 
+    def assign_teams(self, frames, tracks):
+        team_assigner = TeamAssigner()
+        team_assigner.assign_team_color(frames[0], tracks['players'][0])
+
+        for frame_num, player_track in enumerate(tracks['players']):
+            for player_id, track in player_track.items():
+                team = team_assigner.get_player_team(frames[frame_num], track['bbox'], player_id)
+                tracks['players'][frame_num][player_id]['team'] = team
+                tracks['players'][frame_num][player_id]['team_color'] = team_assigner.team_colors[team]
+
+        return tracks
+
     def draw_ellpse(self, frame, bbox, track_id, color=(0, 255, 0)):
         y2 = int(bbox[3])
         x_center, _ = get_center_bbox(bbox)
@@ -114,10 +129,14 @@ class tracking:
 
         return frame
 
-
-
     def annotations(self, video_frames, tracks):
         output_video_frames = []
+
+        # Define team colors (BGR format)
+        team_colors = {
+            1: (255, 0, 0),    # Team 1: Blue
+            2: (0, 0, 255)     # Team 2: Red
+        }
 
         for frame_num, frame in enumerate(video_frames):
             frame = frame.copy()
@@ -126,9 +145,16 @@ class tracking:
             referee_dict = tracks["referees"][frame_num]
             ball_dict = tracks["ball"][frame_num]
 
-            # players: green disc
+            # players: color based on team
             for track_id, player in player_dict.items():
-                frame = self.draw_ellpse(frame, player["bbox"], track_id, color=(255, 20, 0))
+                # Get team color, default to green if no team assigned
+                team = player.get("team", None)
+                if team is not None and team in team_colors:
+                    color = team_colors[team]
+                else:
+                    color = (0, 255, 0)  # Green for unassigned
+
+                frame = self.draw_ellpse(frame, player["bbox"], track_id, color=color)
 
             # referees: yellow disc
             for track_id, ref in referee_dict.items():
