@@ -4,3 +4,6 @@ def get_center_bbox(bbox):
 
 def get_width(bbox):
     return int(bbox[2] - bbox[0])
+
+def foot_distance_measure(p1,p2):
+    return ((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)**0.5
